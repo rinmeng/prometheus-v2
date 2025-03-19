@@ -456,6 +456,25 @@ def main():
     if app.driver:
         app.driver.quit()
 
+def display_prometheus_banner():
+    banner = """
+  _____                          _   _                     __     _____  
+ |  __ \                        | | | |                   /  \   / __  \ 
+ | |__) | __ ___  _ __ ___   ___| |_| |__   ___ _   _ ___ \__/   `' / /' 
+ |  ___/ '__/ _ \| '_ ` _ \ / _ \ __| '_ \ / _ \ | | / __|         / /    
+ | |   | | | (_) | | | | | |  __/ |_| | | |  __/ |_| \__ \       ./ /___  
+ |_|   |_|  \___/|_| |_| |_|\___|\__|_| |_|\___|\__,_|___/       \_____/  
+                                                                       
+          ╔════════════════════════════════════════════════╗
+          ║                  PROMETHEUS v2                 ║
+          ║                https://rinm.dev                ║
+          ╚════════════════════════════════════════════════╝
+    """
+    print(banner)
+
+
 if __name__ == "__main__":
+    display_prometheus_banner()
     print("prometheus has started, please do not close this window")
+    print("Use the GUI to book rooms, this panel is for messages only.")
     main()
