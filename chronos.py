@@ -7,14 +7,25 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select 
 from selenium.common.exceptions import WebDriverException, NoSuchWindowException
-from dotenv import load_dotenv
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import importlib
 import config
 
-# Load environment variables from .env file
-load_dotenv()
+def read_credentials():
+    """Read credentials from credentials.txt"""
+    creds = {}
+    try:
+        with open('credentials.txt', 'r') as f:
+            for line in f:
+                if '=' in line:
+                    key, value = line.strip().split('=', 1)
+                    creds[key] = value
+    except Exception as e:
+        print(f"Error reading credentials: {e}")
+    return creds
+
+credentials = read_credentials()
 
 def initialize_driver():
     driver = webdriver.Chrome()
@@ -22,10 +33,13 @@ def initialize_driver():
     return driver
 
 def login(driver):
-    # Load environment variables
-    username = os.getenv("UBC_USERNAME")
-    password = os.getenv("UBC_PASSWORD")
+    # Load credentials from credentials.txt
+    username = credentials.get("UBC_USERNAME")
+    password = credentials.get("UBC_PASSWORD")
     
+    if not username or not password:
+        raise Exception("Credentials not found in credentials.txt")
+        
     # Base URL for booking study rooms
     base_booking_url = "https://bookings.ok.ubc.ca/studyrooms/"
     driver.get(base_booking_url)
