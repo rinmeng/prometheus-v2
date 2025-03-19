@@ -457,7 +457,7 @@ def main():
         app.driver.quit()
 
 def display_prometheus_banner():
-    banner = """
+    banner = r"""
   _____                          _   _                     __     _____  
  |  __ \                        | | | |                   /  \   / __  \ 
  | |__) | __ ___  _ __ ___   ___| |_| |__   ___ _   _ ___ \__/   `' / /' 
@@ -466,12 +466,11 @@ def display_prometheus_banner():
  |_|   |_|  \___/|_| |_| |_|\___|\__|_| |_|\___|\__,_|___/       \_____/  
                                                                        
           ╔════════════════════════════════════════════════╗
-          ║                  PROMETHEUS v2                 ║
-          ║                https://rinm.dev                ║
+          ║               PROMETHEUS v2                    ║
+          ║         https://rinm.dev                       ║
           ╚════════════════════════════════════════════════╝
     """
     print(banner)
-
 
 if __name__ == "__main__":
     display_prometheus_banner()
