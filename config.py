@@ -5,8 +5,8 @@ config = {
     "start_time": 21600,
     "end_time": 43200,
     "room_title": "Booked by UBCOBookingBot",
-    "room_description": "Test Description",
-    "phone_number": "000-000-0000",
+    "room_description": "",
+    "phone_number": "",
     "email": "prometheus@rinm.dev"
 }
 

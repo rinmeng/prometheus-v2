@@ -170,22 +170,22 @@ class PrometheusGUI:
         self.end_time_combo.grid(row=4, column=1, sticky=(tk.W, tk.E))
         
         # Booking Details
-        ttk.Label(self.main_frame, text="Title:").grid(row=5, column=0, sticky=tk.W)
+        ttk.Label(self.main_frame, text="Title (*):").grid(row=5, column=0, sticky=tk.W)
         self.title_entry = ttk.Entry(self.main_frame)
         self.title_entry.insert(0, self.config_data["room_title"])
         self.title_entry.grid(row=5, column=1, sticky=(tk.W, tk.E))
         
         ttk.Label(self.main_frame, text="Description:").grid(row=6, column=0, sticky=tk.W)
-        self.desc_entry = ttk.Entry(self.main_frame)
-        self.desc_entry.insert(0, self.config_data["room_description"])
+        self.desc_entry = ttk.Entry(self.main_frame, state="disabled")
+        self.desc_entry.insert(0, config.config.get("room_description", "prometheus v2 by https://rinm.dev"))
         self.desc_entry.grid(row=6, column=1, sticky=(tk.W, tk.E))
         
         ttk.Label(self.main_frame, text="Phone:").grid(row=7, column=0, sticky=tk.W)
-        self.phone_entry = ttk.Entry(self.main_frame)
-        self.phone_entry.insert(0, self.config_data["phone_number"])
+        self.phone_entry = ttk.Entry(self.main_frame, state="disabled")
+        self.phone_entry.insert(0, config.config.get("phone_number", "000-000-0000"))
         self.phone_entry.grid(row=7, column=1, sticky=(tk.W, tk.E))
         
-        ttk.Label(self.main_frame, text="Email:").grid(row=8, column=0, sticky=tk.W)
+        ttk.Label(self.main_frame, text="Email (*):").grid(row=8, column=0, sticky=tk.W)
         self.email_entry = ttk.Entry(self.main_frame)
         self.email_entry.insert(0, self.config_data["email"])
         self.email_entry.grid(row=8, column=1, sticky=(tk.W, tk.E))
@@ -320,6 +320,15 @@ class PrometheusGUI:
     def book_room(self):
         """Handle room booking"""
         try:
+            # Validate required fields
+            if not self.title_entry.get().strip():
+                messagebox.showerror("Error", "Title is required!")
+                return
+                
+            if not self.email_entry.get().strip():
+                messagebox.showerror("Error", "Email is required!")
+                return
+
             # Save configuration first
             self.save_config()
             
@@ -335,8 +344,8 @@ class PrometheusGUI:
                 "end_time": self.time_to_seconds(self.end_time_var.get()),
                 "date": self.date_entry.get(),
                 "room_title": self.title_entry.get(),
-                "room_description": self.desc_entry.get(),
-                "phone_number": self.phone_entry.get(),
+                "room_description": "prometheus v2 by https://rinm.dev",  # Default description
+                "phone_number": "000-000-0000",  # Default phone
                 "email": self.email_entry.get()
             })
             
@@ -448,4 +457,5 @@ def main():
         app.driver.quit()
 
 if __name__ == "__main__":
+    print("prometheus has started, please do not close this window")
     main()

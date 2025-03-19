@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import importlib
 import config
+from selenium.webdriver.chrome.options import Options  # Add this import at the top with other imports
 
 def read_credentials():
     """Read credentials from credentials.txt"""
@@ -28,7 +29,13 @@ def read_credentials():
 credentials = read_credentials()
 
 def initialize_driver():
-    driver = webdriver.Chrome()
+    """Initialize a headless Chrome driver"""
+    chrome_options = Options()
+    chrome_options.add_argument('--headless=new')  # Using new headless mode
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    
+    driver = webdriver.Chrome(options=chrome_options)
     driver.set_window_size(600, 600)
     return driver
 
