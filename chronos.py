@@ -30,8 +30,9 @@ base_booking_url = "https://bookings.ok.ubc.ca/studyrooms/"
 driver = webdriver.Chrome()
 
 # Open the booking URL, and set the window size to 600x600
-driver.get(base_booking_url)
+
 driver.set_window_size(600, 600)
+driver.get(base_booking_url)
 
 # Find the login button from the study room website and click it
 driver.find_element(By.XPATH, "//input[@value='Log in']").click()
@@ -77,68 +78,81 @@ while "duosecurity.com" in driver.current_url:
 # area is the building
 # rooms[] is the room number
 
+rooms_booked = 0
 
 def book_room():
+    global rooms_booked
+    
+    # Reload the config file to get the latest data
     importlib.reload(config)
     room_data = config.config
-    # Before we construct the URL, we need to split the sessions into 2 hours intervals, max of 3 sessions
     
-    # Construct the URL
-    url = f"https://bookings.ok.ubc.ca/studyrooms/edit_entry.php?drag=1&area={room_data["area"]}&start_seconds={room_data["start_time"]}&end_seconds={config["end_time"]}&rooms[]={room_data["room"]}&start_date={room_data["date"]}&top=0"
-    print("Booking room: ", url)
+    start_time = room_data["start_time"]
+    end_time = room_data["end_time"]
     
-    # Open the URL
-    driver.get(url)
-    
-    # input the room title
-    driver.find_element(By.ID, "name").send_keys(room_data["room_title"])
-    
-    # input description
-    driver.find_element(By.ID, "description").send_keys(room_data["room_description"])
-    
-    # select the room type
-    # select the Instructional / Workshop option to differentiate from other bookings
-    Select(driver.find_element(By.ID, "type")).select_by_value("W")
-    
-    # input phone number
-    driver.find_element(By.ID, "f_phone").send_keys(room_data["phone_number"])
-    
-    # input email
-    driver.find_element(By.ID, "f_email").send_keys(room_data["email"])
-    
-    # delay to allow the page to load the conflict checks
-    
-    # now check and see if there was any schedule conflicts,
-    conflict_check = driver.find_element(By.ID, "conflict_check")
-    
-    # now check and see if there was any policy conflicts,
-    policy_check = driver.find_element(By.ID, "policy_check")
-    
-    
-    # if there are no schedule it will say "No schedule conflicts"
-    # if there are no policy conflicts it will say "No policy conflicts"
-    # so, we will wait until the title is not empty
-    while conflict_check.get_attribute("title") == "" or policy_check.get_attribute("title") == "":
-        print("Checking for conflicts...")
-        time.sleep(1)
+    # Process the bookings in 2-hour chunks
+    while start_time < end_time and rooms_booked < 3:
+        # Ensure max session is 2 hours (7200 seconds)
+        session_end = min(start_time + 7200, end_time)
+        
+        # Construct the booking URL
+        url = (
+            f"https://bookings.ok.ubc.ca/studyrooms/edit_entry.php?drag=1"
+            f"&area={room_data['area']}"
+            f"&start_seconds={start_time}"
+            f"&end_seconds={session_end}"
+            f"&rooms[]={room_data['room']}"
+            f"&start_date={room_data['date']}"
+            f"&top=0"
+        )
+        
+        print(f"Booking room from {start_time} to {session_end}: {url}")
+        driver.get(url)
 
-    # if there is conflicts, we will not book the room, back off to url
-    if conflict_check.get_attribute("title") != "No schedule conflicts" or policy_check.get_attribute("title") != "No policy conflicts":
-        print("There are conflicts, I cannot book this room... backing off to main page")
-        # print the conflict and policy checks
-        print("Conflict: ", conflict_check.get_attribute("title"))
-        print("Policy: ", policy_check.get_attribute("title"))
-        driver.get(base_booking_url)
-        return
-    
-    # print the conflict and policy checks
-    print(conflict_check.get_attribute("title"))
-    print(policy_check.get_attribute("title"))
-    
-    # find the save button and click it
-    # driver.find_element(By.CLASS_NAME, "default_action").click()
+        # Input details
+        driver.find_element(By.ID, "name").send_keys(room_data["room_title"])
+        driver.find_element(By.ID, "description").send_keys(room_data["room_description"])
+        Select(driver.find_element(By.ID, "type")).select_by_value("W")
+        driver.find_element(By.ID, "f_phone").send_keys(room_data["phone_number"])
+        driver.find_element(By.ID, "f_email").send_keys(room_data["email"])
+
+        # Check for conflicts
+        while driver.find_element(By.ID, "conflict_check").get_attribute("title") == "" or \
+              driver.find_element(By.ID, "policy_check").get_attribute("title") == "":
+            print("Checking for conflicts...")
+            time.sleep(1)
+        
+        conflict_title = driver.find_element(By.ID, "conflict_check").get_attribute("title")
+        policy_title = driver.find_element(By.ID, "policy_check").get_attribute("title")
+
+        if conflict_title != "No scheduling conflicts" or policy_title != "No policy conflicts":
+            print("Conflict detected! Skipping this session.")
+            print("Conflict:", conflict_title)
+            print("Policy:", policy_title)
+            # goto the booking url to view the conflict 
+            # it looks like this
+            # https://bookings.ok.ubc.ca/studyrooms/index.php?view=day&page_date=2025-03-21&area=6
+            conflict_url = (f"https://bookings.ok.ubc.ca/studyrooms/index.php?view=day"
+                            f"&page_date={room_data['date']}"
+                            f"&area={room_data['area']}")
+            driver.get(conflict_url)
+            
+            # Move to the next session
+        else:
+            print("No conflicts, booking room...")
+            driver.find_element(By.CLASS_NAME, "default_action").click()
+            rooms_booked += 1
+        
+        # Move to the next session
+        start_time = session_end
+
+        if rooms_booked >= 3:
+            print("Reached booking limit.")
+            rooms_booked = 0
+            break
 
 
+# Dev mode
 while True:
     command = input("Enter Selenium command (or 'exit'): ")
     if command.lower() == "exit":
