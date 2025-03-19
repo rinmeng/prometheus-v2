@@ -168,6 +168,8 @@ def book_room(driver=None):
                                 f"&page_date={room_data['date']}"
                                 f"&area={room_data['area']}")
                 driver.get(booked_url)
+                print("Check your bookings at:", booked_url)
+                print("You can still book more rooms, just use a different area.")
                 break
             
         return True
