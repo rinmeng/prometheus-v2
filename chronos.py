@@ -12,6 +12,16 @@ from selenium.webdriver.support import expected_conditions as EC
 import importlib
 import config
 from selenium.webdriver.chrome.options import Options  # Add this import at the top with other imports
+import logging
+import warnings
+import os
+
+# Add these at the top of your file, after the imports
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
+warnings.filterwarnings('ignore')  # Suppress general warnings
+logging.getLogger('selenium').setLevel(logging.ERROR)  # Only show selenium errors
+logging.getLogger('urllib3').setLevel(logging.ERROR)  # Suppress urllib3 logging
+logging.basicConfig(level=logging.ERROR)  # Set basic config to only show errors
 
 def read_credentials():
     """Read credentials from credentials.txt"""
@@ -31,9 +41,13 @@ credentials = read_credentials()
 def initialize_driver():
     """Initialize a headless Chrome driver"""
     chrome_options = Options()
-    chrome_options.add_argument('--headless=new')  # Using new headless mode
+    chrome_options.add_argument('--headless=new')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
+    # Add these new options
+    chrome_options.add_argument('--log-level=3')  # Set Chrome logging level
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])  # Disable logging
+    chrome_options.add_argument('--silent')  # Run in silent mode
     
     driver = webdriver.Chrome(options=chrome_options)
     driver.set_window_size(600, 600)
@@ -71,17 +85,18 @@ def login(driver):
         print("Waiting for user to leave: authentication.ubc.ca")
         time.sleep(1)
 
-    # Wait for user to leave url that contains "duosecurity.com"
+    # Replace the while loop print statements with a single initial message
+    print("Check your phone for duo authentication...")
     while "duosecurity.com" in driver.current_url:
-        print("Please check your phone for Duo authentication")
         try:
             # Automatically click the "Trust this browser" button for duo
             duo_button = driver.find_element(By.ID, "trust-browser-button")
             duo_button.click()
         except WebDriverException:
-            print()
             pass
         time.sleep(2)
+    
+    print("Authentication completed")
 
 rooms_booked = 0
 
@@ -93,84 +108,85 @@ def book_room(driver=None):
         login(driver)
     
     try:
-        # Reload the config file to get the latest data
         importlib.reload(config)
         room_data = config.config
         
         start_time = room_data["start_time"]
         end_time = room_data["end_time"]
         
-        # Process the bookings in 2-hour chunks
         while start_time < end_time and rooms_booked < 3:
-            # Ensure max session is 2 hours (7200 seconds)
-            session_end = min(start_time + 7200, end_time)
-            
-            # Construct the booking URL
-            url = (
-                f"https://bookings.ok.ubc.ca/studyrooms/edit_entry.php?drag=1"
-                f"&area={room_data['area']}"
-                f"&start_seconds={start_time}"
-                f"&end_seconds={session_end}"
-                f"&rooms[]={room_data['room']}"
-                f"&start_date={room_data['date']}"
-                f"&top=0"
-            )
-            
-            print(f"\nBooking room from {convert_seconds_to_time(start_time)}"
-                    f" - {convert_seconds_to_time(session_end)}")
-            driver.get(url)
-
-            # Add explicit waits
-            wait = WebDriverWait(driver, 10)
-            name_field = wait.until(EC.presence_of_element_located((By.ID, "name")))
-            name_field.send_keys(room_data["room_title"])
-            
-            driver.find_element(By.ID, "description").send_keys(room_data["room_description"])
-            Select(driver.find_element(By.ID, "type")).select_by_value("W")
-            driver.find_element(By.ID, "f_phone").send_keys(room_data["phone_number"])
-            driver.find_element(By.ID, "f_email").send_keys(room_data["email"])
-
-            # Check for conflicts
-            while driver.find_element(By.ID, "conflict_check").get_attribute("title") == "" or \
-                  driver.find_element(By.ID, "policy_check").get_attribute("title") == "":
-                time.sleep(1)
-            
-            conflict_title = driver.find_element(By.ID, "conflict_check").get_attribute("title")
-            policy_title = driver.find_element(By.ID, "policy_check").get_attribute("title")
-
-            if conflict_title != "No scheduling conflicts" or policy_title != "No policy conflicts":
-                print("Conflict detected! Skipping this session.")
-                print("Conflict:", conflict_title)
-                print("Policy:", policy_title)
+            try:
+                session_end = min(start_time + 7200, end_time)
                 
-                # if the policy contains "maximum", then we have reached the booking limit
-                if "maximum" in policy_title:
-                    rooms_booked = 3
-                    print(f"Sorry, you have reached booking limit of 3 per area per user.")
-                if "3 weeks" in policy_title:
-                    rooms_booked = 3
-                    print("You have reached the booking limit of 3 weeks in advance.")
-                # Move to the next session
-            else:
-                driver.find_element(By.CLASS_NAME, "default_action").click()
-                print("Room booked successfully!")
-                rooms_booked += 1
-            
-            # Move to the next session
-            start_time = session_end
+                url = (
+                    f"https://bookings.ok.ubc.ca/studyrooms/edit_entry.php?drag=1"
+                    f"&area={room_data['area']}"
+                    f"&start_seconds={start_time}"
+                    f"&end_seconds={session_end}"
+                    f"&rooms[]={room_data['room']}"
+                    f"&start_date={room_data['date']}"
+                    f"&top=0"
+                )
+                
+                print(f"\nBooking room from {convert_seconds_to_time(start_time)}"
+                        f" - {convert_seconds_to_time(session_end)}")
+                driver.get(url)
 
-            if rooms_booked >= 3:
-                rooms_booked = 0
-                # goto the booking url to view the bookings
-                # it looks like this
-                # https://bookings.ok.ubc.ca/studyrooms/index.php?view=day&page_date=2025-03-21&area=6
-                booked_url = (f"https://bookings.ok.ubc.ca/studyrooms/index.php?view=day"
+                # Use explicit waits with timeouts
+                wait = WebDriverWait(driver, 10)
+                
+                # Wait for and fill form fields
+                name_field = wait.until(EC.presence_of_element_located((By.ID, "name")))
+                name_field.send_keys(room_data["room_title"])
+                
+                description = wait.until(EC.presence_of_element_located((By.ID, "description")))
+                description.send_keys(room_data["room_description"])
+                
+                room_type = wait.until(EC.presence_of_element_located((By.ID, "type")))
+                Select(room_type).select_by_value("W")
+                
+                phone = wait.until(EC.presence_of_element_located((By.ID, "f_phone")))
+                phone.send_keys(room_data["phone_number"])
+                
+                email = wait.until(EC.presence_of_element_located((By.ID, "f_email")))
+                email.send_keys(room_data["email"])
+
+                # Wait for conflict checks with timeout
+                wait.until(lambda driver: driver.find_element(By.ID, "conflict_check").get_attribute("title") != "")
+                wait.until(lambda driver: driver.find_element(By.ID, "policy_check").get_attribute("title") != "")
+                
+                conflict_title = driver.find_element(By.ID, "conflict_check").get_attribute("title")
+                policy_title = driver.find_element(By.ID, "policy_check").get_attribute("title")
+
+                if conflict_title != "No scheduling conflicts" or policy_title != "No policy conflicts":
+                    print("Conflict detected! Skipping this session.")
+                    print("Conflict:", conflict_title)
+                    print("Policy:", policy_title)
+                    
+                    if "maximum" in policy_title or "3 weeks" in policy_title:
+                        rooms_booked = 3
+                        print("Booking limit reached.")
+                        break
+                else:
+                    submit_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "default_action")))
+                    submit_button.click()
+                    print("Room booked successfully!")
+                    rooms_booked += 1
+
+                start_time = session_end
+
+                if rooms_booked >= 3:
+                    rooms_booked = 0
+                    booked_url = (f"https://bookings.ok.ubc.ca/studyrooms/index.php?view=day"
                                 f"&page_date={room_data['date']}"
                                 f"&area={room_data['area']}")
-                driver.get(booked_url)
-                print("Check your bookings at:", booked_url)
-                print("You can still book more rooms, just use a different area.")
-                break
+                    driver.get(booked_url)
+                    break
+                    
+            except Exception as e:
+                print(f"Error during booking attempt: {str(e)}")
+                start_time = session_end  # Move to next slot even if current fails
+                continue
             
         return True
     
