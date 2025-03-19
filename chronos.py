@@ -55,8 +55,8 @@ def initialize_driver():
 
 def login(driver):
     # Load credentials from credentials.txt
-    username = credentials.get("UBC_USERNAME")
-    password = credentials.get("UBC_PASSWORD")
+    username = credentials.get("USERNAME")
+    password = credentials.get("PASSWORD")
     
     if not username or not password:
         raise Exception("Credentials not found in credentials.txt")
