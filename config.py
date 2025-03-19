@@ -1,14 +1,18 @@
 config = {
+    "UBC_PASSWORD":"",
+    "UBC_USERNAME":"",
     "area": 6,
-    "room": 17,
+    "room": 23,
+    "date": "2025-03-25",
     "start_time": 21600,
     "end_time": 43200,
-    "date": "2025-03-21",
-    "room_title": "Test",
+    "room_title": "Booked by UBCOBookingBot",
     "room_description": "Test Description",
     "phone_number": "000-000-0000",
     "email": "prometheus@rinm.dev"
 }
+
+# Room mappings
 rooms_map = {
     "LIB 121 (4 people)": 2,
     "LIB 122 (4)": 1,
@@ -58,13 +62,15 @@ rooms_map = {
     "EME 2248 (8)": 50,
     "EME 2252 (8)": 51,
     "EME 2254 (8)": 52,
-    "EME 2257 (10)": 53,
+    "EME 2257 (10)": 53
 }
+
+# Area mappings
 area_map = {
     "Library": 1,
     "Commons: Floor 0": 5,
     "Commons: Floor 1": 6,
     "Commons: Floor 3": 7,
     "EME: Tower 1": 8,
-    "EME: Tower 2": 9,
+    "EME: Tower 2": 9
 }
