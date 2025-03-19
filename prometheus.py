@@ -466,8 +466,8 @@ def display_prometheus_banner():
  |_|   |_|  \___/|_| |_| |_|\___|\__|_| |_|\___|\__,_|___/       \_____/  
                                                                        
           ╔════════════════════════════════════════════════╗
-          ║               PROMETHEUS v2                    ║
-          ║         https://rinm.dev                       ║
+          ║                  PROMETHEUS v2                 ║
+          ║                https://rinm.dev                ║
           ╚════════════════════════════════════════════════╝
     """
     print(banner)
@@ -476,4 +476,5 @@ if __name__ == "__main__":
     display_prometheus_banner()
     print("prometheus has started, please do not close this window")
     print("Use the GUI to book rooms, this panel is for messages only.")
+    print("Make sure you check https://github.com/rinmeng/prometheus-v2 for updates & setups.")
     main()
