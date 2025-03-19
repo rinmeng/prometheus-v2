@@ -1,6 +1,4 @@
 config = {
-    "UBC_PASSWORD":"",
-    "UBC_USERNAME":"",
     "area": 6,
     "room": 23,
     "date": "2025-03-25",
